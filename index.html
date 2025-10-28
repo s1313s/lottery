@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽奖程序</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .time-display {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        .time-label {
+            font-size: 14px;
+            color: #ffd700;
+            margin-bottom: 5px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #ff5252;
+        }
+        button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: none;
+        }
+        .winner {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        #rolling {
+            font-size: 48px;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        .result-title {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+        .lottery-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 5px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .timestamp {
+            color: #ffd700;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 抽奖程序 🎉</h1>
+        
+        <div class="time-display">
+            <div class="time-label">📅 当前北京时间</div>
+            <div id="currentTime"></div>
+        </div>
+        
+        <div class="input-group">
+            <label for="maxNumber">评论区层数（北京时间截止11月3日21：00）：</label>
+            <input type="number" id="maxNumber" placeholder="请输入最大序号" min="1" value="100">
+        </div>
+        
+        <div class="input-group">
+            <label for="winnerCount">中奖人数：</label>
+            <input type="number" id="winnerCount" placeholder="请输入中奖人数" min="1" value="3">
+        </div>
+        
+        <button id="lotteryBtn" onclick="startLottery()">开始抽奖</button>
+        
+        <div id="rolling"></div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // 更新北京时间
+        function updateTime() {
+            const now = new Date();
+            const beijingTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
+            
+            const year = beijingTime.getFullYear();
+            const month = String(beijingTime.getMonth() + 1).padStart(2, '0');
+            const day = String(beijingTime.getDate()).padStart(2, '0');
+            const hours = String(beijingTime.getHours()).padStart(2, '0');
+            const minutes = String(beijingTime.getMinutes()).padStart(2, '0');
+            const seconds = String(beijingTime.getSeconds()).padStart(2, '0');
+            
+            const timeString = `${year}年${month}月${day}日 ${hours}:${minutes}:${seconds}`;
+            document.getElementById('currentTime').textContent = timeString;
+        }
+        
+        // 每秒更新时间
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        function startLottery() {
+            const maxNumber = parseInt(document.getElementById('maxNumber').value);
+            const winnerCount = parseInt(document.getElementById('winnerCount').value);
+            const resultDiv = document.getElementById('result');
+            const rollingDiv = document.getElementById('rolling');
+            const lotteryBtn = document.getElementById('lotteryBtn');
+            
+            // 验证输入
+            if (!maxNumber || !winnerCount || maxNumber < 1 || winnerCount < 1) {
+                alert('请输入有效的数字！');
+                return;
+            }
+            
+            if (winnerCount > maxNumber) {
+                alert('中奖人数不能超过参与人数！');
+                return;
+            }
+            
+            // 记录抽奖开始时间
+            const startTime = new Date();
+            const beijingStartTime = new Date(startTime.toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
+            const startTimeString = `${beijingStartTime.getFullYear()}年${String(beijingStartTime.getMonth() + 1).padStart(2, '0')}月${String(beijingStartTime.getDate()).padStart(2, '0')}日 ${String(beijingStartTime.getHours()).padStart(2, '0')}:${String(beijingStartTime.getMinutes()).padStart(2, '0')}:${String(beijingStartTime.getSeconds()).padStart(2, '0')}`;
+            
+            // 禁用按钮
+            lotteryBtn.disabled = true;
+            resultDiv.style.display = 'none';
+            resultDiv.innerHTML = '';
+            
+            // 创建参与者数组
+            let participants = Array.from({length: maxNumber}, (_, i) => i + 1);
+            let winners = [];
+            
+            // 滚动动画
+            let rollCount = 0;
+            rollingDiv.textContent = '抽奖中...';
+            
+            const rollInterval = setInterval(() => {
+                rollingDiv.textContent = Math.floor(Math.random() * maxNumber) + 1;
+                rollCount++;
+                
+                if (rollCount > 30) {
+                    clearInterval(rollInterval);
+                    
+                    // 抽取中奖者（确保不重复）
+                    for (let i = 0; i < winnerCount; i++) {
+                        const randomIndex = Math.floor(Math.random() * participants.length);
+                        winners.push(participants[randomIndex]);
+                        participants.splice(randomIndex, 1);
+                    }
+                    
+                    // 排序
+                    winners.sort((a, b) => a - b);
+                    
+                    // 显示结果
+                    rollingDiv.textContent = '';
+                    resultDiv.innerHTML = '<div class="result-title">🏆 中奖名单 🏆</div>';
+                    
+                    // 逐个显示中奖者
+                    winners.forEach((winner, index) => {
+                        setTimeout(() => {
+                            const winnerDiv = document.createElement('div');
+                            winnerDiv.className = 'winner';
+                            winnerDiv.textContent = `第 ${index + 1} 位: 评论区第 ${winner} 层`;
+                            resultDiv.appendChild(winnerDiv);
+                        }, index * 300);
+                    });
+                    
+                    // 添加抽奖信息
+                    setTimeout(() => {
+                        const infoDiv = document.createElement('div');
+                        infoDiv.className = 'lottery-info';
+                        infoDiv.innerHTML = `
+                            <div>🕐 抽奖时间: <span class="timestamp">${startTimeString}</span></div>
+                            <div style="margin-top: 5px;">📊 参与总数: ${maxNumber} 层 | 中奖人数: ${winnerCount} 位</div>
+                            <div style="margin-top: 5px;">✅ 本次抽奖采用随机算法，公平公正</div>
+                        `;
+                        resultDiv.appendChild(infoDiv);
+                    }, winners.length * 300);
+                    
+                    resultDiv.style.display = 'block';
+                    
+                    // 重新启用按钮
+                    setTimeout(() => {
+                        lotteryBtn.disabled = false;
+                    }, winners.length * 300 + 500);
+                }
+            }, 80);
+        }
+    </script>
+</body>
+</html>
