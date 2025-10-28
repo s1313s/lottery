@@ -7,7 +7,7 @@
 
 ## 📸 预览
 
-[在线体验](https://s1313s.github.io/lottery/) | [查看源码](https://github.com/s1313s/lottery)
+[在线体验](https://s1313s.github.io/lottery/) | [查看源码](https://github.com/s1313s/lottery/blob/main/index.html)
 
 ## ✨ 功能特点
 
